@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from multiprocessing import Pool
+#from multiprocessing import Pool
 
 f = open('data.json', encoding="utf8")
 dataArr = json.load(f)
@@ -53,8 +53,10 @@ def verificateFile():
         if result != -1:
             del dataArr[result]
 
-def main(i):
+def main():
+    verificateFile()
     try:
+        for i in dataArr:
             url = 'https://www.google.com/search?q=+'+i['Название'].replace(" ","+")+'&hl=ru&prmd=ivmn&sxsrf=AJOqlzVHmngGsZrz__M8PHnLQWxQhXtFhQ:1675148751745&source=lnms&tbm=isch&sa=X&ved=2ahUKEwiOsqyyn_H8AhUqiv0HHUmfB0EQ_AUoAXoECAEQAQ&biw=1018&bih=850&dpr=2'
             driver.get(url=url)
             time.sleep(2)
@@ -72,8 +74,6 @@ def main(i):
             (print('Произошла ошибка'))
 
 if __name__ == '__main__':
-    verificateFile()
-    p = Pool(processes = 5)
-    p.map(main, dataArr)
+    main()
     
     
