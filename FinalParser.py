@@ -6,14 +6,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from multiprocessing import Pool
+import re
 
 f = open('data.json', encoding="utf8")
 dataArr = json.load(f)
 f.close()
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-driver.get("https://www.google.com")
-driver.maximize_window()
+
 
 def appendJson(entry):
     filename = 'sample.json'
@@ -35,7 +35,7 @@ def appendJson(entry):
                             indent=2,
                             ensure_ascii=False,
                             separators=(',',': '))
-    
+
     print('Successfully appended to the JSON file')
 
 def findImgByName(name, array):
@@ -53,27 +53,41 @@ def verificateFile():
         if result != -1:
             del dataArr[result]
 
+def findImg():
+    retries = 0
+    count = 1
+    
+    while True:
+        driver.implicitly_wait(3)
+        imgList = driver.find_element(By.XPATH, '//div[@jsname="r5xl4"]/div['+str(count)+']')
+        imgList.click()
+        path = driver.find_element(By.CLASS_NAME,'zjoqD')
+        driver.implicitly_wait(3)
+        imgSrc = path.find_element(By.TAG_NAME,'img')
+        for retries in range (3):
+            if(imgSrc.get_attribute('src').startswith("data")):
+                time.sleep(2)
+                print(retries)
+            else:
+                return imgSrc
+        count = count + 1
+
+
 def main(i):
-    try:
-            url = 'https://www.google.com/search?q=+'+i['Название'].replace(" ","+")+'&hl=ru&prmd=ivmn&sxsrf=AJOqlzVHmngGsZrz__M8PHnLQWxQhXtFhQ:1675148751745&source=lnms&tbm=isch&sa=X&ved=2ahUKEwiOsqyyn_H8AhUqiv0HHUmfB0EQ_AUoAXoECAEQAQ&biw=1018&bih=850&dpr=2'
-            driver.get(url=url)
-            time.sleep(2)
-            img = driver.find_element(By.XPATH, '//div[@jsname="r5xl4"]/div[1]')
-            img.click()
-            time.sleep(4)
-            result = driver.find_element(By.CLASS_NAME,'zjoqD')
-            imgSrc = result.find_element(By.TAG_NAME,'img')
-            dictionary = {
-                "Название":i["Название"],
-                "Ссылка":imgSrc.get_attribute('src')
-            }
-            appendJson(dictionary)
-    except:
-            (print('Произошла ошибка'))
+    url = 'https://www.google.com/search?q=+'+i['Название'].replace(" ","+")+'&hl=ru&prmd=ivmn&sxsrf=AJOqlzVHmngGsZrz__M8PHnLQWxQhXtFhQ:1675148751745&source=lnms&tbm=isch&sa=X&ved=2ahUKEwiOsqyyn_H8AhUqiv0HHUmfB0EQ_AUoAXoECAEQAQ&biw=1018&bih=850&dpr=2'
+    driver.get(url=url)
+    driver.implicitly_wait(3)
+    imgSrc = findImg()
+    dictionary = {
+        "Название":i["Название"],
+        "Ссылка":imgSrc.get_attribute('src')
+    }
+    appendJson(dictionary)
 
 if __name__ == '__main__':
     verificateFile()
-    p = Pool(processes = 5)
-    p.map(main, dataArr)
-    
-    
+    print('Введите сколько браузеров открыть для парсинга (от 1 до 5)')
+    x = input()
+    if int(x) <= 5:
+        p = Pool(processes = int(x))
+        p.map(main, dataArr)
